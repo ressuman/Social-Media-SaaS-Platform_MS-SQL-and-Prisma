@@ -1,0 +1,205 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+// ROLES AND PERMISSIONS MANAGEMENT
+model Role {
+  id          Int      @id @default(autoincrement()) @map("role_id")
+  name        String   @unique @db.VarChar(50)
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  deletedBy   Int?     @map("deleted_by")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  users           User[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          Int      @id @default(autoincrement()) @map("permission_id")
+  name        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  category    String?  @db.VarChar(50) // e.g., 'user_management', 'content', 'social_accounts'
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  deletedBy   Int?     @map("deleted_by")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       Int      @map("role_id")
+  permissionId Int      @map("permission_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  createdBy    Int?     @map("created_by")
+
+  // Relations
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// USER MANAGEMENT
+model User {
+  id           Int       @id @default(autoincrement()) @map("user_id")
+  roleId       Int       @map("role_id")
+  username     String    @unique @db.VarChar(50)
+  email        String    @unique @db.VarChar(100)
+  password     String    @db.VarChar(255) // Hashed password
+  firstName    String    @map("first_name") @db.VarChar(50)
+  lastName     String    @map("last_name") @db.VarChar(50)
+  profileImage String?   @map("profile_image") @db.VarChar(255)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLogin    DateTime? @map("last_login")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  createdBy    Int?      @map("created_by")
+  updatedBy    Int?      @map("updated_by")
+  deletedBy    Int?      @map("deleted_by")
+  deletedAt    DateTime? @map("deleted_at")
+
+  // Relations
+  role         Role          @relation(fields: [roleId], references: [id])
+  accountUsers AccountUser[]
+
+  @@map("users")
+}
+
+// SOCIAL MEDIA PLATFORMS AND INTEGRATION
+model Platform {
+  id          Int       @id @default(autoincrement()) @map("platform_id")
+  name        String    @unique @db.VarChar(50) // Facebook, Twitter, Instagram, LinkedIn, etc.
+  apiVersion  String?   @map("api_version") @db.VarChar(20)
+  baseUrl     String?   @map("base_url") @db.VarChar(255)
+  icon        String?   @db.VarChar(255)
+  color       String?   @db.VarChar(20) // Brand color for UI
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdBy   Int?      @map("created_by")
+  updatedBy   Int?      @map("updated_by")
+  deletedBy   Int?      @map("deleted_by")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  accounts Account[]
+
+  @@map("platforms")
+}
+
+model Account {
+  id              Int       @id @default(autoincrement()) @map("account_id")
+  platformId      Int       @map("platform_id")
+  name            String    @db.VarChar(100)
+  handle          String    @db.VarChar(100)
+  profileUrl      String?   @map("profile_url") @db.VarChar(255)
+  accessToken     String?   @map("access_token") @db.Text
+  refreshToken    String?   @map("refresh_token") @db.Text
+  tokenExpiresAt  DateTime? @map("token_expires_at")
+  accountMetadata String?   @map("account_metadata") @db.Text // JSON string for additional platform-specific data
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  createdBy       Int?      @map("created_by")
+  updatedBy       Int?      @map("updated_by")
+  deletedBy       Int?      @map("deleted_by")
+  deletedAt       DateTime? @map("deleted_at")
+
+  // Relations
+  platform     Platform      @relation(fields: [platformId], references: [id])
+  accountUsers AccountUser[]
+
+  @@unique([platformId, handle])
+  @@map("accounts")
+}
+
+model AccountUser {
+  accountId   Int      @map("account_id")
+  userId      Int      @map("user_id")
+  canCreate   Boolean  @default(false) @map("can_create")
+  canEdit     Boolean  @default(false) @map("can_edit")
+  canDelete   Boolean  @default(false) @map("can_delete")
+  canPublish  Boolean  @default(false) @map("can_publish")
+  canRespond  Boolean  @default(false) @map("can_respond")
+  canAnalyze  Boolean  @default(false) @map("can_analyze")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+
+  // Relations
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([accountId, userId])
+  @@map("account_users")
+}
+
+// // CONTENT MANAGEMENT (for future expansion)
+// model ContentTemplate {
+//   id          Int       @id @default(autoincrement()) @map("template_id")
+//   name        String    @db.VarChar(100)
+//   description String?   @db.Text
+//   content     String    @db.Text
+//   templateType String   @map("template_type") @db.VarChar(50) // post, story, ad, etc.
+//   isActive    Boolean   @default(true) @map("is_active")
+//   createdAt   DateTime  @default(now()) @map("created_at")
+//   updatedAt   DateTime  @updatedAt @map("updated_at")
+//   createdBy   Int       @map("created_by")
+//   updatedBy   Int?      @map("updated_by")
+//   deletedBy   Int?      @map("deleted_by")
+//   deletedAt   DateTime? @map("deleted_at")
+
+//   @@map("content_templates")
+// }
+
+// // AUDIT LOGS (for tracking all system activities)
+// model AuditLog {
+//   id         Int      @id @default(autoincrement()) @map("log_id")
+//   userId     Int?     @map("user_id")
+//   action     String   @db.VarChar(100)
+//   tableName  String   @map("table_name") @db.VarChar(50)
+//   recordId   Int?     @map("record_id")
+//   oldValues  String?  @map("old_values") @db.Text
+//   newValues  String?  @map("new_values") @db.Text
+//   ipAddress  String?  @map("ip_address") @db.VarChar(45)
+//   userAgent  String?  @map("user_agent") @db.Text
+//   createdAt  DateTime @default(now()) @map("created_at")
+
+//   @@map("audit_logs")
+// }
+
+
+
+
+
+
+
+
+
+
+
+
