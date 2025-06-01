@@ -1,5 +1,5 @@
 {
-  "name": "personal-project-64-microsoft-sql-server-prisma-express-nodejs--nextjs-restfulapi-social-media-saas",
+  "name": "personal-project-64-mssql-prisma-nextjs-api-social-media-saas",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
+    "@prisma/client": "^5.7.1",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-aspect-ratio": "^1.1.7",
@@ -65,6 +66,7 @@
     "eslint": "^8",
     "eslint-config-next": "14.2.29",
     "postcss": "^8",
+    "prisma": "^5.7.1",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }
